@@ -16,9 +16,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import com.example.bitcoinexpensetracker.data.model.TransactionEntity
 import com.example.bitcoinexpensetracker.presentation.viewmodel.TransactionViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun MainScreen(navController: NavController,transactionViewModel: TransactionViewModel) {
@@ -75,7 +79,10 @@ fun MainScreen(navController: NavController,transactionViewModel: TransactionVie
         ) {
             Text("Add transaction", color = Color.White, fontSize = 20.sp, fontFamily = FontFamily.SansSerif)
         }
-        TransactionList(transactions)
+        TransactionList(
+            transactions = transactions,
+            onScrollToEnd = { transactionViewModel.loadMoreTransactions() }
+        )
     }
 
     if (showDialog) {
@@ -115,7 +122,7 @@ fun BalanceCard(balance: Double, onAddBalance: () -> Unit) {
                     text = "$balance BTC",
                     color = Color.White,
                     fontSize = 28.sp,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif
                 )
             }
@@ -141,19 +148,62 @@ fun BalanceCard(balance: Double, onAddBalance: () -> Unit) {
 
 
 @Composable
-fun TransactionList(transactions: List<TransactionEntity>) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(transactions) { transaction ->
-            TransactionItem(transaction)
+fun TransactionList(
+    transactions: List<TransactionEntity>,
+    onScrollToEnd: () -> Unit
+) {
+    val groupedTransactions = transactions.groupBy {
+        SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(it.timestamp))
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        groupedTransactions.forEach { (date, transactions) ->
+            item {
+                Text(
+                    text = date,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(8.dp),
+                    fontFamily = FontFamily.SansSerif
+                )
+            }
+            items(transactions) { transaction ->
+                TransactionItem(transaction)
+            }
+        }
+        item {
+            LaunchedEffect(Unit) {
+                onScrollToEnd()
+            }
         }
     }
 }
 
 @Composable
 fun TransactionItem(transaction: TransactionEntity) {
-    Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-        Row(modifier = Modifier.padding(16.dp)) {
-            Text(text = "${transaction.amount} BTC - ${transaction.category}")
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(text = transaction.category, fontWeight = FontWeight.Bold, fontFamily = FontFamily.SansSerif)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    fontFamily = FontFamily.SansSerif
+                )
+            }
+            Text(text = "${transaction.amount} BTC", fontWeight = FontWeight.Bold, fontFamily = FontFamily.SansSerif)
         }
     }
 }
@@ -231,5 +281,3 @@ fun AddTransactionDialog(
         }
     }
 }
-
-data class Transaction(val amount: Double, val category: String)

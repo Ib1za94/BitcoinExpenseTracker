@@ -1,5 +1,6 @@
 package com.example.bitcoinexpensetracker.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -8,5 +9,5 @@ data class TransactionEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val amount: Double,
     val category: String,
-    val timestamp: Long = System.currentTimeMillis()
+    @ColumnInfo(name = "timestamp") val timestamp: Long = System.currentTimeMillis()
 )

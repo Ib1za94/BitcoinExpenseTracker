@@ -11,4 +11,8 @@ class TransactionRepository(private val transactionDao: TransactionDao) {
     suspend fun insertTransaction(transaction: TransactionEntity) {
         transactionDao.insertTransaction(transaction)
     }
+
+    suspend fun getTransactionsPaginated(limit: Int, offset: Int): List<TransactionEntity> {
+        return transactionDao.getTransactionsPaginated(limit, offset)
+    }
 }
