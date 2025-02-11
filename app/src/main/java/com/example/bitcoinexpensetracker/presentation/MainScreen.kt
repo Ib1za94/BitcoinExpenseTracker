@@ -15,8 +15,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.navigation.NavController
 import com.example.bitcoinexpensetracker.data.model.TransactionEntity
 import com.example.bitcoinexpensetracker.presentation.viewmodel.TransactionViewModel
@@ -25,11 +27,11 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun MainScreen(navController: NavController,transactionViewModel: TransactionViewModel) {
+fun MainScreen(navController: NavController, transactionViewModel: TransactionViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     val transactions by transactionViewModel.transactions.collectAsState()
     val bitcoinPrice by transactionViewModel.bitcoinPrice.collectAsState()
-
+    val balance by transactionViewModel.balance.collectAsState()
 
     Column(
         modifier = Modifier
@@ -59,7 +61,8 @@ fun MainScreen(navController: NavController,transactionViewModel: TransactionVie
                     .padding(horizontal = 8.dp)
             )
         }
-        BalanceCard(balance = transactions.sumOf { it.amount }, onAddBalance = { showDialog = true })
+
+        BalanceCard(balance = balance, onAddBalance = { showDialog = true })
         Button(
             onClick = { navController.navigate("second_screen") },
             modifier = Modifier
@@ -216,6 +219,9 @@ fun AddTransactionDialog(
     onDismiss: () -> Unit
 ) {
     var amount by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("Deposit") }
+
+    val isAmountValid = amount.toDoubleOrNull() != null && amount.toDouble() > 0
 
     Box(
         modifier = Modifier
@@ -244,6 +250,7 @@ fun AddTransactionDialog(
                     fontFamily = FontFamily.SansSerif
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+
                 TextField(
                     value = amount,
                     onValueChange = { amount = it },
@@ -251,31 +258,52 @@ fun AddTransactionDialog(
                         .fillMaxWidth()
                         .background(Color.Transparent),
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(24.dp),
                     colors = TextFieldDefaults.textFieldColors(
                         backgroundColor = Color.White,
                         cursorColor = Color(0xFFFFA726),
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
-                    )
+                    ),
+                    label = { Text("Enter Amount") }
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (!isAmountValid && amount.isNotEmpty()) {
+                    Text(
+                        text = "Invalid amount, please enter a positive number",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(4.dp)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                        shape = RoundedCornerShape(24.dp)) {
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
                         Text("Cancel", color = Color(0xFFFFA726), fontFamily = FontFamily.SansSerif)
                     }
-                    Button(onClick = {
-                        amount.toDoubleOrNull()?.let {
-                            val transaction = TransactionEntity(amount = it, category = "Deposit")
-                            transactionViewModel.addTransaction(transaction)
-                            onDismiss()
-                        }
-                    }, colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                        shape = RoundedCornerShape(24.dp)) {
+                    Button(
+                        onClick = {
+                            if (isAmountValid) {
+                                amount.toDoubleOrNull()?.let {
+                                    val transaction = TransactionEntity(amount = it, category = category)
+                                    transactionViewModel.addTransaction(transaction)
+                                    onDismiss()
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
                         Text("Confirm", color = Color(0xFFFFA726), fontFamily = FontFamily.SansSerif)
                     }
                 }

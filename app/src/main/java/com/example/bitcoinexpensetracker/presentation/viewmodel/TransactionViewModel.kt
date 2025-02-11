@@ -19,6 +19,9 @@ class TransactionViewModel(
     private val _transactions = MutableStateFlow<List<TransactionEntity>>(emptyList())
     val transactions: StateFlow<List<TransactionEntity>> = _transactions.asStateFlow()
 
+    private val _balance = MutableStateFlow<Double>(0.0)
+    val balance: StateFlow<Double> = _balance.asStateFlow()
+
     private var currentPage = 0
     private val pageSize = 20
     private var isLoading = false
@@ -37,8 +40,13 @@ class TransactionViewModel(
         viewModelScope.launch {
             repository.getAllTransactions().collect { transactionList ->
                 _transactions.value = transactionList
+                calculateBalance()
             }
         }
+    }
+
+    private fun calculateBalance() {
+        _balance.value = _transactions.value.sumOf { it.amount }
     }
 
     private fun fetchBitcoinPriceIfNeeded() {
@@ -69,10 +77,10 @@ class TransactionViewModel(
         }
     }
 
-
     fun addTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
             repository.insertTransaction(transaction)
+            fetchTransactions()
         }
     }
 
@@ -80,6 +88,7 @@ class TransactionViewModel(
         viewModelScope.launch {
             val transaction = TransactionEntity(amount = amount, category = category, timestamp = System.currentTimeMillis())
             repository.insertTransaction(transaction)
+            fetchTransactions()
         }
     }
 

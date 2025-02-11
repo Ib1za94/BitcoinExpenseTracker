@@ -6,8 +6,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.bitcoinexpensetracker.data.model.TransactionEntity
 import kotlinx.coroutines.flow.Flow
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 @Dao
 interface TransactionDao {
@@ -27,9 +25,4 @@ interface TransactionDao {
         LIMIT :limit OFFSET :offset
     """)
     suspend fun getTransactionsPaginated(limit: Int, offset: Int): List<TransactionEntity>
-}
-
-fun TransactionEntity.getFormattedDate(): String {
-    val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    return formatter.format(timestamp)
 }
