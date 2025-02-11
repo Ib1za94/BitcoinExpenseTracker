@@ -4,13 +4,17 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bitcoinexpensetracker.data.model.TransactionEntity
+import com.example.bitcoinexpensetracker.data.repository.BitcoinRepository
 import com.example.bitcoinexpensetracker.data.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class TransactionViewModel(private val repository: TransactionRepository) : ViewModel() {
+class TransactionViewModel(
+    private val repository: TransactionRepository,
+    private val bitcoinRepository: BitcoinRepository
+) : ViewModel() {
 
     private val _transactions = MutableStateFlow<List<TransactionEntity>>(emptyList())
     val transactions: StateFlow<List<TransactionEntity>> = _transactions.asStateFlow()
@@ -19,8 +23,14 @@ class TransactionViewModel(private val repository: TransactionRepository) : View
     private val pageSize = 20
     private var isLoading = false
 
+    private val _bitcoinPrice = MutableStateFlow<Double?>(null)
+    val bitcoinPrice: StateFlow<Double?> = _bitcoinPrice.asStateFlow()
+
+    private var lastUpdateTime: Long = 0
+
     init {
         fetchTransactions()
+        fetchBitcoinPriceIfNeeded()
     }
 
     private fun fetchTransactions() {
@@ -30,6 +40,35 @@ class TransactionViewModel(private val repository: TransactionRepository) : View
             }
         }
     }
+
+    private fun fetchBitcoinPriceIfNeeded() {
+        val currentTime = System.currentTimeMillis()
+        if (_bitcoinPrice.value == null || (currentTime - lastUpdateTime) > 3600000) {
+            fetchBitcoinPrice()
+            lastUpdateTime = currentTime
+        }
+    }
+
+    fun fetchBitcoinPrice() {
+        viewModelScope.launch {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastUpdateTime < 60 * 60 * 1000) {
+                Log.d("TransactionViewModel", "Skipping update, last update was too recent.")
+                return@launch
+            }
+
+            try {
+                val response = bitcoinRepository.getBitcoinPrice()
+                val price = response.bpi.usd.rate
+                _bitcoinPrice.value = price
+                lastUpdateTime = currentTime
+                Log.d("TransactionViewModel", "Bitcoin price updated: $price")
+            } catch (e: Exception) {
+                Log.e("TransactionViewModel", "Error fetching Bitcoin price", e)
+            }
+        }
+    }
+
 
     fun addTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {

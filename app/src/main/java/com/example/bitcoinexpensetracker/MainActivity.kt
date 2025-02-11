@@ -9,6 +9,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.bitcoinexpensetracker.data.AppDatabase
+import com.example.bitcoinexpensetracker.data.network.RetrofitInstance
+import com.example.bitcoinexpensetracker.data.repository.BitcoinRepository
 import com.example.bitcoinexpensetracker.data.repository.TransactionRepository
 import com.example.bitcoinexpensetracker.presentation.MainScreen
 import com.example.bitcoinexpensetracker.presentation.SecondScreen
@@ -22,9 +24,11 @@ class MainActivity : ComponentActivity() {
         val database = AppDatabase.getDatabase(applicationContext)
         val transactionDao = database.transactionDao()
         val transactionRepository = TransactionRepository(transactionDao)
+        val bitcoinRepository = BitcoinRepository(RetrofitInstance.api)
+
 
         val transactionViewModel: TransactionViewModel by viewModels {
-            TransactionViewModelFactory(transactionRepository)
+            TransactionViewModelFactory(transactionRepository, bitcoinRepository)
         }
 
         enableEdgeToEdge()
@@ -38,6 +42,43 @@ class MainActivity : ComponentActivity() {
                 composable("second_screen") {
                     SecondScreen(navController, transactionViewModel)
                 }
+            }
+        }
+        transactionViewModel.fetchBitcoinPrice()
+
+        class MainActivity : ComponentActivity() {
+            override fun onCreate(savedInstanceState: Bundle?) {
+                super.onCreate(savedInstanceState)
+
+                val database = AppDatabase.getDatabase(applicationContext)
+                val transactionDao = database.transactionDao()
+                val transactionRepository = TransactionRepository(transactionDao)
+                val bitcoinRepository = BitcoinRepository(RetrofitInstance.api)
+
+
+                val transactionViewModel: TransactionViewModel by viewModels {
+                    TransactionViewModelFactory(transactionRepository, bitcoinRepository)
+                }
+
+                enableEdgeToEdge()
+                setContent {
+                    val navController = rememberNavController()
+
+                    NavHost(navController = navController, startDestination = "main_screen") {
+                        composable("main_screen") {
+                            MainScreen(navController, transactionViewModel)
+                        }
+                        composable("second_screen") {
+                            SecondScreen(navController, transactionViewModel)
+                        }
+                    }
+                }
+                transactionViewModel.fetchBitcoinPrice()
+            }
+
+            override fun onResume() {
+                super.onResume()
+                transactionViewModel.fetchBitcoinPrice()
             }
         }
     }

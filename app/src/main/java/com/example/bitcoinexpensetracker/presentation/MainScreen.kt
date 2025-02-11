@@ -28,6 +28,8 @@ import java.util.Locale
 fun MainScreen(navController: NavController,transactionViewModel: TransactionViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     val transactions by transactionViewModel.transactions.collectAsState()
+    val bitcoinPrice by transactionViewModel.bitcoinPrice.collectAsState()
+
 
     Column(
         modifier = Modifier
@@ -48,7 +50,7 @@ fun MainScreen(navController: NavController,transactionViewModel: TransactionVie
                     .background(Color.Gray)
             )
             Text(
-                text = "BTC/USD: 43,500",
+                text = bitcoinPrice?.let { "BTC/USD: $it" } ?: "Loading...",
                 fontSize = 15.sp,
                 color = Color.Black,
                 fontFamily = FontFamily.Serif,
