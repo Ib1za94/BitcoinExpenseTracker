@@ -11,18 +11,19 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.text.font.FontFamily
+import androidx.navigation.NavController
+import com.example.bitcoinexpensetracker.data.model.TransactionEntity
+import com.example.bitcoinexpensetracker.presentation.viewmodel.TransactionViewModel
 
 @Composable
-fun MainScreen() {
-    var balance by remember { mutableDoubleStateOf(0.0) }
+fun MainScreen(navController: NavController,transactionViewModel: TransactionViewModel) {
     var showDialog by remember { mutableStateOf(false) }
-    val transactions = remember { mutableStateListOf<Transaction>() }
+    val transactions by transactionViewModel.transactions.collectAsState()
 
     Column(
         modifier = Modifier
@@ -52,9 +53,9 @@ fun MainScreen() {
                     .padding(horizontal = 8.dp)
             )
         }
-        BalanceCard(balance, onAddBalance = { showDialog = true })
+        BalanceCard(balance = transactions.sumOf { it.amount }, onAddBalance = { showDialog = true })
         Button(
-            onClick = { showDialog = true },
+            onClick = { navController.navigate("second_screen") },
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.CenterHorizontally)
@@ -78,10 +79,7 @@ fun MainScreen() {
     }
 
     if (showDialog) {
-        AddTransactionDialog(onDismiss = { showDialog = false }) { amount ->
-            balance += amount
-            transactions.add(Transaction(amount, "Deposit"))
-        }
+        AddTransactionDialog(transactionViewModel, onDismiss = { showDialog = false })
     }
 }
 
@@ -92,7 +90,7 @@ fun BalanceCard(balance: Double, onAddBalance: () -> Unit) {
             .fillMaxWidth()
             .height(250.dp)
             .padding(16.dp)
-            .shadow(8.dp, RoundedCornerShape(24.dp))
+            .shadow(8.dp, RoundedCornerShape(30.dp))
             .background(
                 Brush.linearGradient(
                     colors = listOf(Color(0xFFFFA726), Color(0xFFFFCC80))
@@ -141,8 +139,9 @@ fun BalanceCard(balance: Double, onAddBalance: () -> Unit) {
     }
 }
 
+
 @Composable
-fun TransactionList(transactions: List<Transaction>) {
+fun TransactionList(transactions: List<TransactionEntity>) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(transactions) { transaction ->
             TransactionItem(transaction)
@@ -151,7 +150,7 @@ fun TransactionList(transactions: List<Transaction>) {
 }
 
 @Composable
-fun TransactionItem(transaction: Transaction) {
+fun TransactionItem(transaction: TransactionEntity) {
     Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
         Row(modifier = Modifier.padding(16.dp)) {
             Text(text = "${transaction.amount} BTC - ${transaction.category}")
@@ -160,7 +159,10 @@ fun TransactionItem(transaction: Transaction) {
 }
 
 @Composable
-fun AddTransactionDialog(onDismiss: () -> Unit, onAdd: (Double) -> Unit) {
+fun AddTransactionDialog(
+    transactionViewModel: TransactionViewModel,
+    onDismiss: () -> Unit
+) {
     var amount by remember { mutableStateOf("") }
 
     Box(
@@ -216,7 +218,8 @@ fun AddTransactionDialog(onDismiss: () -> Unit, onAdd: (Double) -> Unit) {
                     }
                     Button(onClick = {
                         amount.toDoubleOrNull()?.let {
-                            onAdd(it)
+                            val transaction = TransactionEntity(amount = it, category = "Deposit")
+                            transactionViewModel.addTransaction(transaction)
                             onDismiss()
                         }
                     }, colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
@@ -230,9 +233,3 @@ fun AddTransactionDialog(onDismiss: () -> Unit, onAdd: (Double) -> Unit) {
 }
 
 data class Transaction(val amount: Double, val category: String)
-
-@Preview
-@Composable
-fun PreviewMainScreen() {
-    MainScreen()
-}

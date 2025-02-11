@@ -61,6 +61,8 @@ dependencies {
     implementation(libs.room.ktx)
     kapt(libs.room.compiler)
 
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
 
     // Retrofit
     implementation(libs.retrofit)

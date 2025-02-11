@@ -31,4 +31,11 @@ class TransactionViewModel(private val repository: TransactionRepository) : View
             repository.insertTransaction(transaction)
         }
     }
+
+    fun addTransaction(amount: Double, category: String) {
+        viewModelScope.launch {
+            val transaction = TransactionEntity(amount = amount, category = category, timestamp = System.currentTimeMillis())
+            repository.insertTransaction(transaction)
+        }
+    }
 }

@@ -13,6 +13,7 @@ compose = "1.7.7"
 lifecycle = "2.8.7"
 room = "2.6.1"
 retrofit = "2.9.0"
+navigation_compose = "2.8.6"
 
 [libraries]
 
@@ -28,13 +29,15 @@ compose-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "co
 # ViewModel
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 
-# Room (БД)
+# Room
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
+# Navigation
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation_compose" }
 
-# Retrofit (API)
+# Retrofit
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 
