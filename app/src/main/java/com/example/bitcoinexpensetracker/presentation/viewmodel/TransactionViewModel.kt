@@ -26,8 +26,8 @@ class TransactionViewModel(
     private val pageSize = 20
     private var isLoading = false
 
-    private val _bitcoinPrice = MutableStateFlow<Double?>(null)
-    val bitcoinPrice: StateFlow<Double?> = _bitcoinPrice.asStateFlow()
+    private val _bitcoinPrice = MutableStateFlow<Int?>(null)
+    val bitcoinPrice: StateFlow<Int?> = _bitcoinPrice.asStateFlow()
 
     private var lastUpdateTime: Long = 0
 
@@ -68,7 +68,7 @@ class TransactionViewModel(
             try {
                 val response = bitcoinRepository.getBitcoinPrice()
                 val price = response.bpi.usd.rate
-                _bitcoinPrice.value = price
+                _bitcoinPrice.value = price.toInt()
                 lastUpdateTime = currentTime
                 Log.d("TransactionViewModel", "Bitcoin price updated: $price")
             } catch (e: Exception) {
@@ -84,29 +84,18 @@ class TransactionViewModel(
         }
     }
 
-    fun addTransaction(amount: Double, category: String) {
-        viewModelScope.launch {
-            val transaction = TransactionEntity(amount = amount, category = category, timestamp = System.currentTimeMillis())
-            repository.insertTransaction(transaction)
-            fetchTransactions()
-        }
-    }
-
     fun loadMoreTransactions() {
         if (isLoading) return
         isLoading = true
-        Log.d("TransactionViewModel", "Loading more transactions...")
 
         viewModelScope.launch {
-            val newTransactions = repository.getTransactionsPaginated(pageSize, currentPage * pageSize)
+            val newTransactions =
+                repository.getTransactionsPaginated(pageSize, currentPage * pageSize)
             if (newTransactions.isNotEmpty()) {
                 _transactions.value = _transactions.value + newTransactions
                 currentPage++
-                Log.d("TransactionViewModel", "Loaded ${newTransactions.size} new transactions.")
-            } else {
-                Log.d("TransactionViewModel", "No more transactions to load.")
+                isLoading = false
             }
-            isLoading = false
         }
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.bitcoinexpensetracker.data.model.TransactionEntity
 import com.example.bitcoinexpensetracker.presentation.viewmodel.TransactionViewModel
 
 @Composable
@@ -82,7 +83,12 @@ fun SecondScreen(navController: NavController, transactionViewModel: Transaction
         Button(
             onClick = {
                 val transactionAmount = -(amount.toDoubleOrNull() ?: 0.0)
-                transactionViewModel.addTransaction(transactionAmount, selectedCategory)
+                val transaction = TransactionEntity(
+                    amount = transactionAmount,
+                    category = selectedCategory,
+                    timestamp = System.currentTimeMillis()
+                )
+                transactionViewModel.addTransaction(transaction)
                 navController.popBackStack()
             },
             modifier = Modifier

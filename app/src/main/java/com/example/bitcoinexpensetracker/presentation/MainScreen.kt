@@ -1,5 +1,6 @@
 package com.example.bitcoinexpensetracker.presentation
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -161,10 +163,24 @@ fun TransactionList(
         SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(it.timestamp))
     }
 
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleIndex ->
+                if (lastVisibleIndex == transactions.size - 1) {
+                    onScrollToEnd()
+                }
+            }
+    }
+
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize()
     ) {
         groupedTransactions.forEach { (date, transactions) ->
+            Log.d("LazyColumn", "Date: $date, Transactions: $transactions")
+
             item {
                 Text(
                     text = date,
@@ -174,13 +190,10 @@ fun TransactionList(
                     fontFamily = FontFamily.SansSerif
                 )
             }
-            items(transactions) { transaction ->
+
+            items(transactions.distinctBy { it.id }) { transaction ->
                 TransactionItem(transaction)
-            }
-        }
-        item {
-            LaunchedEffect(Unit) {
-                onScrollToEnd()
+                Log.d("LazyColumn", "Transaction: $transaction")
             }
         }
     }
