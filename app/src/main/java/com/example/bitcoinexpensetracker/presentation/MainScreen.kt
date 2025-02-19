@@ -308,6 +308,12 @@ fun AddTransactionDialog(
                         onClick = {
                             if (isAmountValid) {
                                 amount.toDoubleOrNull()?.let {
+
+                                    if (it == 0.0) {
+                                        Log.d("AddTransactionDialog", "Ignoring transaction with zero amount")
+                                        return@let
+                                    }
+
                                     val transaction = TransactionEntity(amount = it, category = category)
                                     transactionViewModel.addTransaction(transaction)
                                     onDismiss()

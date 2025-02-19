@@ -1,5 +1,6 @@
 package com.example.bitcoinexpensetracker.presentation
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -83,6 +84,12 @@ fun SecondScreen(navController: NavController, transactionViewModel: Transaction
         Button(
             onClick = {
                 val transactionAmount = -(amount.toDoubleOrNull() ?: 0.0)
+
+                if (transactionAmount == 0.0) {
+                    Log.d("SecondScreen", "Ignoring transaction with zero amount")
+                    return@Button
+                }
+
                 val transaction = TransactionEntity(
                     amount = transactionAmount,
                     category = selectedCategory,

@@ -33,7 +33,7 @@ class TransactionViewModel(
 
     init {
         fetchTransactions()
-        fetchBitcoinPriceIfNeeded()
+        fetchBitcoinPrice()
     }
 
     private fun fetchTransactions() {
@@ -49,38 +49,40 @@ class TransactionViewModel(
         _balance.value = _transactions.value.sumOf { it.amount }
     }
 
-    private fun fetchBitcoinPriceIfNeeded() {
-        val currentTime = System.currentTimeMillis()
-        if (_bitcoinPrice.value == null || (currentTime - lastUpdateTime) > 3600000) {
-            fetchBitcoinPrice()
-            lastUpdateTime = currentTime
-        }
-    }
-
     fun fetchBitcoinPrice() {
         viewModelScope.launch {
             val currentTime = System.currentTimeMillis()
-            if (currentTime - lastUpdateTime < 60 * 60 * 1000) {
-                Log.d("TransactionViewModel", "Skipping update, last update was too recent.")
-                return@launch
-            }
 
-            try {
-                val response = bitcoinRepository.getBitcoinPrice()
-                val price = response.bpi.usd.rate
-                _bitcoinPrice.value = price.toInt()
-                lastUpdateTime = currentTime
-                Log.d("TransactionViewModel", "Bitcoin price updated: $price")
-            } catch (e: Exception) {
-                Log.e("TransactionViewModel", "Error fetching Bitcoin price", e)
+            if (lastUpdateTime == 0L || (currentTime - lastUpdateTime) >= 60 * 60 * 1000) {
+                try {
+                    val response = bitcoinRepository.getBitcoinPrice()
+                    val price = response.bpi.usd.rate
+                    _bitcoinPrice.value = price.toInt()
+                    lastUpdateTime = currentTime
+                    Log.d("TransactionViewModel", "Bitcoin price updated: $price")
+                } catch (e: Exception) {
+                    Log.e("TransactionViewModel", "Error fetching Bitcoin price", e)
+                }
+            } else {
+                Log.d("TransactionViewModel", "Skipping update, last update was too recent.")
             }
         }
     }
 
     fun addTransaction(transaction: TransactionEntity) {
+        if (transaction.amount == 0.0) {
+            Log.d("TransactionViewModel", "Игнорируем транзакцию с нулевой суммой")
+            return
+        }
+
         viewModelScope.launch {
-            repository.insertTransaction(transaction)
-            fetchTransactions()
+            val currentBalance = repository.getBalance()
+            if (currentBalance + transaction.amount >= 0) {
+                repository.insertTransaction(transaction)
+                fetchTransactions()
+            } else {
+                Log.d("TransactionViewModel", "Недостаточно средств для транзакции")
+            }
         }
     }
 
@@ -94,8 +96,8 @@ class TransactionViewModel(
             if (newTransactions.isNotEmpty()) {
                 _transactions.value = _transactions.value + newTransactions
                 currentPage++
-                isLoading = false
             }
+            isLoading = false
         }
     }
 }

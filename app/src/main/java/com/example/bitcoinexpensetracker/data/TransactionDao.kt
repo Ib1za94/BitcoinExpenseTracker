@@ -13,6 +13,9 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
 
+    @Query("SELECT SUM(amount) FROM transactions")
+    suspend fun getBalance(): Double?
+
     @Query("""
         SELECT * FROM transactions 
         ORDER BY timestamp DESC
@@ -24,5 +27,6 @@ interface TransactionDao {
         ORDER BY timestamp DESC
         LIMIT :limit OFFSET :offset
     """)
+
     suspend fun getTransactionsPaginated(limit: Int, offset: Int): List<TransactionEntity>
 }
